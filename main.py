@@ -97,7 +97,7 @@ def main():
     running = True
     playing = False
     count = 0
-    update_frequency = 15
+    update_frequency = 4
 
     positions = set() # init positions as a set
     #positions.add((10, 10)) # add a position to the set
