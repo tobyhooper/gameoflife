@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 pygame.init()
 
@@ -7,8 +8,8 @@ pygame.init()
 
 #colours
 BLACK = (0, 0, 0)
-GREY = (128, 128, 128)
-YELLOW = (255, 255, 0)
+DEADCOL = (23, 26, 33)
+ALIVECOL = (150, 197, 176)
 
 
 #environment variables
@@ -39,7 +40,7 @@ def draw_grid(positions):
         col, row = position
         #top left corner
         top_left = (col * TILE_SIZE, row * TILE_SIZE)
-        pygame.draw.rect(screen, YELLOW, (*top_left, TILE_SIZE, TILE_SIZE)) #unpacks top_left and plots TILE_SIZE (X) x TILE_SIZE (Y)
+        pygame.draw.rect(screen, ALIVECOL, (*top_left, TILE_SIZE, TILE_SIZE)) #unpacks top_left and plots TILE_SIZE (X) x TILE_SIZE (Y)
 
 
     #draw horizontal lines
@@ -99,56 +100,69 @@ def main():
     count = 0
     update_frequency = 4
 
-    positions = set() # init positions as a set
-    #positions.add((10, 10)) # add a position to the set
+    start_time = time.time()  # Initial start time for the timer
+    elapsed_time = 0  # Tracks total elapsed time
+
+    positions = set()  # Init positions as a set
+
     while running:
         clock.tick(FPS)
 
+        # Only update elapsed time if the game is playing
         if playing:
+            elapsed_time = time.time() - start_time
+
+            # Increment count and update the grid if needed
             count += 1
+            if count >= update_frequency:
+                count = 0
+                positions = adjust_grid(positions)
 
-        if count >= update_frequency:
-            count = 0
-            positions = adjust_grid(positions) #update positions to new positions
+        # Update the window title with the current game status and timer
+        pygame.display.set_caption(f"{'Playing' if playing else 'Paused'} - Timer: {int(elapsed_time)} seconds")
 
-        pygame.display.set_caption("Playing" if playing else "Paused")
-
-        #event handling
+        # Event handling
         for event in pygame.event.get():
-            #if quit
             if event.type == pygame.QUIT:
                 running = False
-            # if mouse button is pressed
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
                 col = x // TILE_SIZE
                 row = y // TILE_SIZE
                 pos = (col, row)
 
-                #if position is in set, remove it, else add it
                 if pos in positions:
                     positions.remove(pos)
                 else:
                     positions.add(pos)
 
-            #if key is pressed
             if event.type == pygame.KEYDOWN:
-                #if space is pressed, toggle playing
+                # Toggle the game state between playing and paused
                 if event.key == pygame.K_SPACE:
                     playing = not playing
+                    if playing:
+                        # Resuming: Reset the start time to adjust for the paused period
+                        start_time = time.time() - elapsed_time
+                    else:
+                        # Pausing: Store the current elapsed time
+                        elapsed_time = time.time() - start_time
 
-                #if c is pressed, clear positions
+                # Clear positions and reset timer
                 if event.key == pygame.K_c:
                     positions = set()
                     playing = False
+                    start_time = time.time()
+                    elapsed_time = 0
 
+                # Generate random positions
                 if event.key == pygame.K_g:
                     positions = gen(random.randrange(4, 10) * GRID_WIDTH)
 
-
-        screen.fill(GREY)#fill screen with grey
-        draw_grid(positions) #draws grid AFTER filling screen
-        pygame.display.update()#refresh
+        # Drawing and refreshing the screen
+        screen.fill(DEADCOL)  # Fill screen with the background color
+        draw_grid(positions)  # Draws grid after filling screen
+        pygame.display.update()  # Refresh the display
 
     pygame.quit()
 
